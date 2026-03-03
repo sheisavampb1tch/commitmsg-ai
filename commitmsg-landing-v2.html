@@ -1,0 +1,937 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>CommitMsg — commits on autopilot</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=VT323&display=swap');
+
+:root {
+  --bg: #080808;
+  --surface: #0f0f0f;
+  --surface2: #141414;
+  --border: #1e1e1e;
+  --border2: #2a2a2a;
+  --white: #f0f0f0;
+  --gray1: #aaaaaa;
+  --gray2: #666666;
+  --gray3: #333333;
+  --mono: 'Share Tech Mono', monospace;
+  --display: 'VT323', monospace;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+
+body {
+  background: var(--bg);
+  color: var(--white);
+  font-family: var(--mono);
+  min-height: 100vh;
+  overflow-x: hidden;
+}
+
+/* scanlines */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background: repeating-linear-gradient(0deg, transparent, transparent 3px, rgba(0,0,0,0.04) 3px, rgba(0,0,0,0.04) 4px);
+  pointer-events: none;
+  z-index: 1000;
+}
+
+/* ── NAV ── */
+nav {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  z-index: 500;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 80px;
+  height: 58px;
+  background: rgba(8,8,8,0.96);
+  backdrop-filter: blur(16px);
+  border-bottom: 1px solid var(--border);
+}
+
+.nav-logo {
+  font-family: var(--display);
+  font-size: 24px;
+  letter-spacing: 3px;
+  color: var(--white);
+}
+
+.nav-logo em { color: var(--gray3); font-style: normal; }
+
+.nav-links { display: flex; gap: 40px; list-style: none; }
+.nav-links a { font-size: 11px; color: var(--gray2); text-decoration: none; letter-spacing: 2px; text-transform: uppercase; transition: color 0.2s; }
+.nav-links a:hover { color: var(--white); }
+
+.nav-cta {
+  font-size: 11px;
+  padding: 9px 22px;
+  background: var(--white);
+  color: #000;
+  border: none;
+  font-family: var(--mono);
+  cursor: pointer;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  transition: opacity 0.2s;
+}
+.nav-cta:hover { opacity: 0.85; }
+
+/* ── HERO ── */
+.hero {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  padding: 100px 80px 80px;
+  position: relative;
+  overflow: hidden;
+}
+
+/* grid bg */
+.hero::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(var(--border) 1px, transparent 1px),
+    linear-gradient(90deg, var(--border) 1px, transparent 1px);
+  background-size: 64px 64px;
+  opacity: 0.3;
+  pointer-events: none;
+}
+
+/* vignette */
+.hero::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse 80% 80% at 50% 50%, transparent 40%, var(--bg) 100%);
+  pointer-events: none;
+}
+
+.hero-inner {
+  max-width: 1280px;
+  margin: 0 auto;
+  width: 100%;
+  display: grid;
+  grid-template-columns: 1.1fr 0.9fr;
+  gap: 100px;
+  align-items: center;
+  position: relative;
+  z-index: 1;
+}
+
+.hero-left { display: flex; flex-direction: column; }
+
+.hero-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 11px;
+  color: var(--gray2);
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  margin-bottom: 32px;
+  padding: 8px 14px;
+  border: 1px solid var(--border2);
+  background: var(--surface);
+  width: fit-content;
+}
+
+.badge-dot {
+  width: 6px; height: 6px;
+  border-radius: 50%;
+  background: var(--gray1);
+  animation: blink 2s ease infinite;
+}
+
+@keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.2} }
+
+h1 {
+  font-family: var(--display);
+  font-size: clamp(72px, 7vw, 104px);
+  line-height: 0.9;
+  letter-spacing: 4px;
+  color: var(--white);
+  margin-bottom: 32px;
+}
+
+h1 .dim { color: var(--gray3); }
+
+.hero-desc {
+  font-size: 15px;
+  color: var(--gray1);
+  line-height: 1.9;
+  margin-bottom: 44px;
+  max-width: 480px;
+}
+
+.hero-desc strong { color: var(--white); }
+
+/* form */
+.form-wrap { margin-bottom: 16px; }
+
+.form-row {
+  display: flex;
+  max-width: 480px;
+  border: 1px solid var(--border2);
+  transition: border-color 0.2s;
+}
+
+.form-row:focus-within { border-color: var(--gray2); }
+
+.form-input {
+  flex: 1;
+  background: var(--surface);
+  border: none;
+  color: var(--white);
+  font-family: var(--mono);
+  font-size: 13px;
+  padding: 16px 20px;
+  outline: none;
+}
+
+.form-input::placeholder { color: var(--gray3); }
+
+.form-btn {
+  background: var(--white);
+  color: #000;
+  border: none;
+  font-family: var(--mono);
+  font-size: 12px;
+  font-weight: bold;
+  padding: 16px 28px;
+  cursor: pointer;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  white-space: nowrap;
+  transition: background 0.15s;
+  flex-shrink: 0;
+}
+
+.form-btn:hover { background: #ddd; }
+.form-btn:active { transform: scale(0.99); }
+
+.form-note { font-size: 11px; color: var(--gray3); margin-top: 10px; }
+
+.form-success {
+  display: none;
+  padding: 16px 20px;
+  border: 1px solid var(--border2);
+  background: var(--surface);
+  font-size: 13px;
+  color: var(--gray1);
+  max-width: 480px;
+}
+
+/* social proof */
+.social-proof {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  margin-top: 28px;
+}
+
+.avatars { display: flex; }
+.av {
+  width: 30px; height: 30px;
+  border-radius: 50%;
+  border: 2px solid var(--bg);
+  background: var(--surface2);
+  margin-right: -9px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  color: var(--gray2);
+}
+
+.social-text { font-size: 12px; color: var(--gray2); margin-left: 18px; }
+.social-text strong { color: var(--white); }
+
+/* TERMINAL */
+.hero-terminal {
+  background: var(--surface);
+  border: 1px solid var(--border2);
+  box-shadow:
+    0 0 0 1px var(--border),
+    0 40px 120px rgba(0,0,0,0.95),
+    inset 0 1px 0 rgba(255,255,255,0.03);
+}
+
+.t-bar {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  padding: 12px 16px;
+  background: var(--surface2);
+  border-bottom: 1px solid var(--border);
+}
+
+.td { width: 12px; height: 12px; border-radius: 50%; }
+.td.r { background: #3a1515; }
+.td.y { background: #2e2510; }
+.td.g { background: #102510; }
+
+.t-title { font-size: 11px; color: var(--gray3); margin-left: 10px; letter-spacing: 1px; }
+
+.t-body {
+  padding: 22px 22px 26px;
+  font-size: 13px;
+  line-height: 2.1;
+}
+
+.tl { opacity: 0; display: flex; gap: 10px; }
+.tl.v { animation: slidein 0.25s ease forwards; }
+
+.tl.d1  { animation-delay: 0.5s; }
+.tl.d2  { animation-delay: 0.9s; }
+.tl.d3  { animation-delay: 1.3s; }
+.tl.d4  { animation-delay: 1.6s; }
+.tl.d5  { animation-delay: 1.9s; }
+.tl.d6  { animation-delay: 2.2s; }
+.tl.d7  { animation-delay: 2.5s; }
+.tl.d8  { animation-delay: 2.8s; }
+.tl.d9  { animation-delay: 3.1s; }
+.tl.d10 { animation-delay: 3.5s; }
+
+@keyframes slidein {
+  from { opacity:0; transform: translateX(-6px); }
+  to   { opacity:1; transform: translateX(0); }
+}
+
+.tp  { color: var(--gray3); flex-shrink:0; }
+.tc  { color: var(--white); }
+.to  { color: var(--gray3); padding-left: 14px; font-size: 12px; }
+.tsep{ color: var(--border2); padding-left: 14px; font-size: 12px; }
+.topt{ color: var(--gray2); padding-left: 14px; font-size: 12px; }
+.topt.sel { color: var(--white); }
+.topt.sel::before { content: '▶ '; color: var(--gray1); }
+.topt:not(.sel)::before { content: '  '; }
+.tok { color: var(--gray1); padding-left: 14px; font-size: 12px; }
+
+/* ── STATS BAR ── */
+.stats-bar {
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+  background: var(--surface);
+}
+
+.stats-inner {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 0 80px;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+}
+
+.stat-item {
+  padding: 32px 0;
+  text-align: center;
+  border-right: 1px solid var(--border);
+}
+
+.stat-item:last-child { border-right: none; }
+
+.stat-num {
+  font-family: var(--display);
+  font-size: 52px;
+  color: var(--white);
+  line-height: 1;
+  margin-bottom: 6px;
+}
+
+.stat-label { font-size: 11px; color: var(--gray2); letter-spacing: 2px; text-transform: uppercase; }
+
+/* ── PROBLEM ── */
+.problem {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 120px 80px;
+}
+
+.section-tag {
+  font-size: 11px;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  color: var(--gray3);
+  margin-bottom: 20px;
+}
+
+.section-h2 {
+  font-family: var(--display);
+  font-size: clamp(48px, 5vw, 72px);
+  letter-spacing: 3px;
+  color: var(--white);
+  margin-bottom: 60px;
+  line-height: 1;
+}
+
+.prob-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2px;
+}
+
+.prob-card {
+  padding: 36px 40px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+}
+
+.prob-label {
+  font-size: 11px;
+  letter-spacing: 2px;
+  margin-bottom: 20px;
+}
+
+.prob-label.bad { color: var(--gray3); }
+.prob-label.good { color: var(--gray1); }
+
+.prob-code {
+  font-size: 14px;
+  line-height: 2.2;
+}
+
+.bad-line { color: var(--gray3); }
+.good-line { color: var(--gray1); }
+.prob-code .comment { color: var(--border2); font-size: 12px; margin-top: 4px; display: block; }
+
+/* ── FEATURES ── */
+.features {
+  background: var(--surface);
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+  padding: 120px 0;
+}
+
+.features-inner {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 0 80px;
+}
+
+.feat-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 2px;
+  margin-top: 60px;
+}
+
+.feat-card {
+  padding: 36px 32px;
+  border: 1px solid var(--border);
+  background: var(--bg);
+  transition: background 0.2s, border-color 0.2s;
+}
+
+.feat-card:hover {
+  background: var(--surface2);
+  border-color: var(--border2);
+}
+
+.feat-num {
+  font-family: var(--display);
+  font-size: 36px;
+  color: var(--gray3);
+  margin-bottom: 16px;
+}
+
+.feat-title {
+  font-size: 14px;
+  color: var(--white);
+  margin-bottom: 10px;
+  letter-spacing: 1px;
+}
+
+.feat-desc {
+  font-size: 12px;
+  color: var(--gray2);
+  line-height: 1.8;
+}
+
+/* ── HOW IT WORKS ── */
+.how {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 120px 80px;
+}
+
+.steps {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 2px;
+  margin-top: 60px;
+}
+
+.step-card {
+  padding: 36px 28px;
+  border: 1px solid var(--border);
+  background: var(--surface);
+}
+
+.step-n {
+  font-family: var(--display);
+  font-size: 48px;
+  color: var(--gray3);
+  margin-bottom: 16px;
+  line-height: 1;
+}
+
+.step-title {
+  font-size: 14px;
+  color: var(--white);
+  margin-bottom: 8px;
+}
+
+.step-desc {
+  font-size: 12px;
+  color: var(--gray2);
+  line-height: 1.8;
+  margin-bottom: 16px;
+}
+
+.step-cmd {
+  font-size: 13px;
+  color: var(--gray1);
+  padding: 8px 12px;
+  background: var(--bg);
+  border: 1px solid var(--border);
+  display: inline-block;
+}
+
+/* ── CTA ── */
+.cta {
+  border-top: 1px solid var(--border);
+  background: var(--surface);
+  padding: 120px 80px;
+}
+
+.cta-inner {
+  max-width: 720px;
+  margin: 0 auto;
+  text-align: center;
+}
+
+.cta-tag {
+  font-size: 11px;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  color: var(--gray3);
+  margin-bottom: 20px;
+}
+
+.cta-h2 {
+  font-family: var(--display);
+  font-size: clamp(52px, 6vw, 80px);
+  letter-spacing: 4px;
+  color: var(--white);
+  line-height: 1;
+  margin-bottom: 20px;
+}
+
+.cta-sub {
+  font-size: 14px;
+  color: var(--gray2);
+  line-height: 1.8;
+  margin-bottom: 16px;
+}
+
+.cta-highlight {
+  font-size: 13px;
+  color: var(--gray1);
+  margin-bottom: 40px;
+  padding: 12px 20px;
+  border: 1px solid var(--border2);
+  background: var(--bg);
+  display: inline-block;
+}
+
+.cta-highlight span { color: var(--white); }
+
+.cta-form {
+  display: flex;
+  max-width: 520px;
+  margin: 0 auto 12px;
+  border: 1px solid var(--border2);
+  transition: border-color 0.2s;
+}
+
+.cta-form:focus-within { border-color: var(--gray1); }
+
+.cta-input {
+  flex: 1;
+  background: var(--bg);
+  border: none;
+  color: var(--white);
+  font-family: var(--mono);
+  font-size: 13px;
+  padding: 18px 22px;
+  outline: none;
+}
+
+.cta-input::placeholder { color: var(--gray3); }
+
+.cta-btn {
+  background: var(--white);
+  color: #000;
+  border: none;
+  font-family: var(--mono);
+  font-size: 12px;
+  font-weight: bold;
+  padding: 18px 32px;
+  cursor: pointer;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  transition: background 0.15s;
+  white-space: nowrap;
+}
+
+.cta-btn:hover { background: #ddd; }
+.cta-btn:active { transform: scale(0.99); }
+
+.cta-note { font-size: 11px; color: var(--gray3); margin-bottom: 24px; }
+
+.cta-success {
+  display: none;
+  padding: 18px 22px;
+  border: 1px solid var(--border2);
+  background: var(--bg);
+  font-size: 13px;
+  color: var(--gray1);
+  max-width: 520px;
+  margin: 0 auto 12px;
+}
+
+.waitlist-count {
+  font-size: 12px;
+  color: var(--gray3);
+  margin-top: 8px;
+}
+
+.waitlist-count strong { color: var(--gray1); }
+
+/* ── FOOTER ── */
+footer {
+  border-top: 1px solid var(--border);
+  padding: 28px 80px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 11px;
+  color: var(--gray3);
+  max-width: 100%;
+}
+
+footer a { color: var(--gray2); text-decoration: none; transition: color 0.2s; }
+footer a:hover { color: var(--white); }
+.footer-links { display: flex; gap: 28px; }
+
+/* ── SCROLL ANIMATIONS ── */
+.fade-up {
+  opacity: 0;
+  transform: translateY(20px);
+  transition: opacity 0.5s ease, transform 0.5s ease;
+}
+.fade-up.visible { opacity: 1; transform: translateY(0); }
+
+/* ── MOBILE ── */
+@media (max-width: 900px) {
+  nav { padding: 0 24px; }
+  .nav-links { display: none; }
+  .hero { padding: 90px 24px 60px; }
+  .hero-inner { grid-template-columns: 1fr; gap: 48px; }
+  .hero-terminal { display: none; }
+  h1 { font-size: 64px; }
+  .stats-inner { padding: 0 24px; grid-template-columns: repeat(2,1fr); }
+  .problem, .how, .cta { padding: 80px 24px; }
+  .features-inner { padding: 0 24px; }
+  .prob-grid, .feat-grid { grid-template-columns: 1fr; }
+  .steps { grid-template-columns: 1fr 1fr; }
+  footer { padding: 24px; flex-direction: column; gap: 12px; text-align: center; }
+  .form-row, .cta-form { max-width: 100%; flex-direction: column; border: none; gap: 2px; }
+  .form-input, .cta-input { border: 1px solid var(--border2); }
+  .form-btn, .cta-btn { border: 1px solid var(--border2); width: 100%; }
+}
+</style>
+</head>
+<body>
+
+<!-- NAV -->
+<nav>
+  <div class="nav-logo">COMMIT<em>MSG</em></div>
+  <ul class="nav-links">
+    <li><a href="#features">Features</a></li>
+    <li><a href="#how">How it works</a></li>
+  </ul>
+  <button class="nav-cta" onclick="document.getElementById('cta-section').scrollIntoView({behavior:'smooth'})">Get Early Access</button>
+</nav>
+
+<!-- HERO -->
+<section class="hero">
+  <div class="hero-inner">
+    <div class="hero-left">
+      <div class="hero-badge">
+        <div class="badge-dot"></div>
+        early access — dropping soon
+      </div>
+
+      <h1>COMMITS<br>ON AUTO<span class="dim">PILOT.</span></h1>
+
+      <p class="hero-desc">
+        Run <strong>cm</strong> after git add.<br>
+        AI reads your diff → generates 3 conventional commit options → you pick with arrow keys.<br>
+        <strong>Done. No thinking required.</strong>
+      </p>
+
+      <div class="form-wrap">
+        <div class="form-row" id="heroFormRow">
+          <input type="email" class="form-input" id="heroInput" placeholder="your@email.com" autocomplete="email" />
+          <button class="form-btn" onclick="handleHeroSubmit()">Get Early Access →</button>
+        </div>
+        <div class="form-note" id="heroNote">No spam. One email at launch. First 50 get free Pro.</div>
+        <div class="form-success" id="heroSuccess">✓ you're on the list. we'll reach out when commitmsg drops.</div>
+      </div>
+
+      <div class="social-proof">
+        <div class="avatars">
+          <div class="av">A</div>
+          <div class="av">K</div>
+          <div class="av">M</div>
+          <div class="av">+</div>
+        </div>
+        <span class="social-text"><strong id="heroCount">23</strong> developers already waiting</span>
+      </div>
+    </div>
+
+    <div class="hero-terminal">
+      <div class="t-bar">
+        <div class="td r"></div>
+        <div class="td y"></div>
+        <div class="td g"></div>
+        <span class="t-title">bash — ~/my-project</span>
+      </div>
+      <div class="t-body">
+        <div class="tl v d1"><span class="tp">$</span><span class="tc">git add src/auth.js</span></div>
+        <div class="tl v d2"><span class="tp">$</span><span class="tc">cm</span></div>
+        <div class="tl v d3"><span class="to">⠸ reading staged changes...</span></div>
+        <div class="tl v d4"><span class="to">⠸ generating options...</span></div>
+        <div class="tl v d5"><span class="tsep">──────────────────────────────────────</span></div>
+        <div class="tl v d6"><span class="topt sel">feat(auth): add OAuth2 login with Google</span></div>
+        <div class="tl v d7"><span class="topt">feat: implement social auth flow</span></div>
+        <div class="tl v d8"><span class="topt">feat(auth): integrate Google sign-in</span></div>
+        <div class="tl v d9"><span class="tsep">──────────────────────────────────────</span></div>
+        <div class="tl v d10"><span class="tok">✓ committed: feat(auth): add OAuth2 login with Google</span></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- STATS -->
+<div class="stats-bar">
+  <div class="stats-inner">
+    <div class="stat-item"><div class="stat-num">1</div><div class="stat-label">command to run</div></div>
+    <div class="stat-item"><div class="stat-num">3</div><div class="stat-label">options generated</div></div>
+    <div class="stat-item"><div class="stat-num">~5s</div><div class="stat-label">per commit</div></div>
+    <div class="stat-item"><div class="stat-num">0</div><div class="stat-label">config needed</div></div>
+  </div>
+</div>
+
+<!-- PROBLEM -->
+<section class="problem fade-up">
+  <div class="section-tag">// the problem</div>
+  <h2 class="section-h2">YOUR GIT LOG IS<br>A CRIME SCENE.</h2>
+  <div class="prob-grid">
+    <div class="prob-card">
+      <div class="prob-label bad">// before commitmsg</div>
+      <div class="prob-code">
+        <span class="bad-line">fix</span><br>
+        <span class="bad-line">wip</span><br>
+        <span class="bad-line">asdfgh</span><br>
+        <span class="bad-line">please work</span><br>
+        <span class="bad-line">ok now fix</span><br>
+        <span class="bad-line">final fix</span><br>
+        <span class="bad-line">FINAL final fix v2</span><br>
+        <span class="comment">// we've all been here</span>
+      </div>
+    </div>
+    <div class="prob-card">
+      <div class="prob-label good">// after commitmsg</div>
+      <div class="prob-code">
+        <span class="good-line">feat(auth): add OAuth2 login flow</span><br>
+        <span class="good-line">fix(api): handle null response edge case</span><br>
+        <span class="good-line">refactor(db): optimize query performance</span><br>
+        <span class="good-line">docs(readme): update install instructions</span><br>
+        <span class="good-line">chore(deps): upgrade to React 19</span><br>
+        <span class="good-line">feat(ui): add dark mode toggle</span><br>
+        <span class="good-line">fix(auth): resolve token expiry bug</span><br>
+        <span class="comment">// clean. every time. automatically.</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- FEATURES -->
+<section class="features" id="features">
+  <div class="features-inner">
+    <div class="section-tag fade-up">// why it works</div>
+    <h2 class="section-h2 fade-up">BUILT FOR DEVS<br>WHO SHIP.</h2>
+    <div class="feat-grid">
+      <div class="feat-card fade-up">
+        <div class="feat-num">01</div>
+        <div class="feat-title">Reads your actual diff</div>
+        <div class="feat-desc">Not templates. CommitMsg reads exactly what you staged and generates messages based on real code changes.</div>
+      </div>
+      <div class="feat-card fade-up">
+        <div class="feat-num">02</div>
+        <div class="feat-title">Conventional Commits always</div>
+        <div class="feat-desc">Every output follows feat/fix/chore/docs format. Your git history stays clean, searchable, and professional.</div>
+      </div>
+      <div class="feat-card fade-up">
+        <div class="feat-num">03</div>
+        <div class="feat-title">Arrow key selection</div>
+        <div class="feat-desc">3 options. Pick with ↑↓, hit enter. Commit applied. Zero copy-pasting, zero context switching.</div>
+      </div>
+      <div class="feat-card fade-up">
+        <div class="feat-num">04</div>
+        <div class="feat-title">Zero config to start</div>
+        <div class="feat-desc">npm install, add your API key once, run cm. Works in any git repo immediately.</div>
+      </div>
+      <div class="feat-card fade-up">
+        <div class="feat-num">05</div>
+        <div class="feat-title">Team style guide</div>
+        <div class="feat-desc">Drop .commitmsg.yml in your repo. Set custom types and scopes. Whole team commits consistently.</div>
+      </div>
+      <div class="feat-card fade-up">
+        <div class="feat-num">06</div>
+        <div class="feat-title">VS Code extension — soon</div>
+        <div class="feat-desc">One-click commits from inside your editor. No terminal. Early access users get it first, free.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- HOW IT WORKS -->
+<section class="how" id="how">
+  <div class="section-tag fade-up">// setup in 60 seconds</div>
+  <h2 class="section-h2 fade-up">HOW IT WORKS.</h2>
+  <div class="steps">
+    <div class="step-card fade-up">
+      <div class="step-n">01</div>
+      <div class="step-title">Install globally</div>
+      <div class="step-desc">One-time install. Works across all your repos forever.</div>
+      <div class="step-cmd">$ npm i -g commitmsg-ai</div>
+    </div>
+    <div class="step-card fade-up">
+      <div class="step-n">02</div>
+      <div class="step-title">Stage your changes</div>
+      <div class="step-desc">Same workflow you already use. Nothing changes here.</div>
+      <div class="step-cmd">$ git add .</div>
+    </div>
+    <div class="step-card fade-up">
+      <div class="step-n">03</div>
+      <div class="step-title">Run cm</div>
+      <div class="step-desc">Reads diff, generates 3 conventional commit options in ~5 seconds.</div>
+      <div class="step-cmd">$ cm</div>
+    </div>
+    <div class="step-card fade-up">
+      <div class="step-n">04</div>
+      <div class="step-title">Pick and commit</div>
+      <div class="step-desc">Arrow keys to pick, enter to commit. Clean git history forever.</div>
+      <div class="step-cmd">↑↓ enter → done</div>
+    </div>
+  </div>
+</section>
+
+<!-- CTA -->
+<section class="cta" id="cta-section">
+  <div class="cta-inner">
+    <div class="cta-tag fade-up">// early_access.exe</div>
+    <h2 class="cta-h2 fade-up">STOP WRITING<br>COMMIT MESSAGES.</h2>
+    <p class="cta-sub fade-up">Dropping on npm soon. Join the waitlist — get notified the moment it's live.</p>
+    <div class="cta-highlight fade-up">First <span>50 signups</span> get free Pro — no credit card needed ever.</div>
+
+    <div class="cta-form fade-up" id="ctaFormWrap">
+      <input type="email" class="cta-input" id="ctaInput" placeholder="your@email.com" autocomplete="email" />
+      <button class="cta-btn" onclick="handleCtaSubmit()">Join Waitlist →</button>
+    </div>
+    <div class="cta-note fade-up" id="ctaNote">No spam. One email at launch. Unsubscribe anytime.</div>
+    <div class="cta-success" id="ctaSuccess">✓ you're on the list. we'll reach out when commitmsg drops.</div>
+    <div class="waitlist-count fade-up"><strong id="ctaCount">23</strong> developers already waiting</div>
+  </div>
+</section>
+
+<footer>
+  <span>© 2026 CommitMsg — commits on autopilot — built by <a href="https://x.com/0xKyotoDev" target="_blank">@0xKyotoDev</a></span>
+  <div class="footer-links">
+    <a href="https://x.com/0xKyotoDev" target="_blank">twitter</a>
+    <a href="#">github</a>
+    <a href="#">npm</a>
+  </div>
+</footer>
+
+<script>
+// scroll animations
+const observer = new IntersectionObserver((entries) => {
+  entries.forEach((e, i) => {
+    if (e.isIntersecting) setTimeout(() => e.target.classList.add('visible'), i * 60);
+  });
+}, { threshold: 0.08 });
+document.querySelectorAll('.fade-up').forEach(el => observer.observe(el));
+
+// counter animation
+let count = 23;
+function bumpCount() {
+  const targets = [document.getElementById('heroCount'), document.getElementById('ctaCount')];
+  const end = 31;
+  const tick = () => {
+    if (count < end) {
+      count++;
+      targets.forEach(el => { if (el) el.textContent = count; });
+      setTimeout(tick, 200);
+    }
+  };
+  setTimeout(tick, 2800);
+}
+bumpCount();
+
+function submitEmail(email) {
+  count++;
+  ['heroCount','ctaCount'].forEach(id => {
+    const el = document.getElementById(id);
+    if (el) el.textContent = count;
+  });
+  // TODO: replace with your Mailchimp/ConvertKit API call
+  console.log('captured:', email);
+}
+
+function handleHeroSubmit() {
+  const email = document.getElementById('heroInput').value.trim();
+  if (!email || !email.includes('@')) return;
+  document.getElementById('heroFormRow').style.display = 'none';
+  document.getElementById('heroNote').style.display = 'none';
+  document.getElementById('heroSuccess').style.display = 'block';
+  submitEmail(email);
+}
+
+function handleCtaSubmit() {
+  const email = document.getElementById('ctaInput').value.trim();
+  if (!email || !email.includes('@')) return;
+  document.getElementById('ctaFormWrap').style.display = 'none';
+  document.getElementById('ctaNote').style.display = 'none';
+  document.getElementById('ctaSuccess').style.display = 'block';
+  submitEmail(email);
+}
+
+document.getElementById('heroInput').addEventListener('keydown', e => { if (e.key === 'Enter') handleHeroSubmit(); });
+document.getElementById('ctaInput').addEventListener('keydown', e => { if (e.key === 'Enter') handleCtaSubmit(); });
+</script>
+</body>
+</html>
