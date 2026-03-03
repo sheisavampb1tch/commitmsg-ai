@@ -902,14 +902,23 @@ function bumpCount() {
 }
 bumpCount();
 
-function submitEmail(email) {
+async function submitEmail(email) {
   count++;
   ['heroCount','ctaCount'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.textContent = count;
   });
-  // TODO: replace with your Mailchimp/ConvertKit API call
-  console.log('captured:', email);
+
+  await fetch('https://api.web3forms.com/submit', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      access_key: '2bcf2eef-7cc2-47c6-8602-c6f5ff7d7244',
+      email: email,
+      subject: 'New CommitMsg waitlist signup',
+      from_name: 'CommitMsg Landing'
+    })
+  });
 }
 
 function handleHeroSubmit() {
